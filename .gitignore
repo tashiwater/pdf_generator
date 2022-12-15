@@ -128,3 +128,7 @@ temp/*.png
 
 # Pyre type checker
 .pyre/
+
+### Custom
+*.jpg
+*.pdf
