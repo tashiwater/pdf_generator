@@ -102,8 +102,6 @@ class GenerateImgPdf():
             for row in range(row_num):
                 for column in range(columun_num):
                     id = page * row_num * columun_num + row * columun_num + column
-                    print(len(images))
-                    print(id)
                     if id < len(images):
                         img = images[id]
                         img = img.crop((int(x0), int(y0), int(x1), int(y1)))
@@ -147,7 +145,6 @@ class Application(tkinter.Frame):
 
     def create_widgets(self):
         width = 500
-        self._row_num, self._column_num = 3,2
         current_dir = os.path.dirname(__file__)
         self._generate_img_pdf = GenerateImgPdf(current_dir)
         
@@ -164,27 +161,45 @@ class Application(tkinter.Frame):
         #     width=width+1, height=height+1,
         #     highlightthickness=0)
 
-        # self.label_description1 = tkinter.ttk.Label(self, text='画像をどのように配置するか')
-        # self.label_description1.grid(row=0, column=1)
+        self.label_description1 = tkinter.ttk.Label(self, text='画像をどのように配置するか')
+        self.label_description1.grid(row=0, column=1, columnspan=2)
 
+        ui_dir = current_dir + "/../ui/"
+        row_path = ui_dir + "icons8-行を表示-80.png"
+        column_path = ui_dir + "icons8-列を表示-80.png"
+        icon_size = (40,40)
+        row_img = Image.open(row_path).resize(icon_size)
+        column_img = Image.open(column_path).resize(icon_size)
+        self._row_img_tk = ImageTk.PhotoImage(row_img)
+        self._column_img_tk = ImageTk.PhotoImage(column_img)
+        self._row_img_canvas = tkinter.Canvas(self, bg="white", width=40, height=40)
+        self._column_img_canvas = tkinter.Canvas(self, bg="white", width=40, height=40)
+        self._row_img_canvas.create_image(1, 1, image=self._row_img_tk, anchor="nw")
+        self._column_img_canvas.create_image(1, 1, image=self._column_img_tk, anchor="nw")
+        self._row_img_canvas.grid(row=1, column=1)
+        self._column_img_canvas.grid(row=2, column=1)
+        self._row_num = tkinter.IntVar(value=3)
+        self._column_num = tkinter.IntVar(value=2)
+        self._entry_row = tkinter.Spinbox(self,textvariable=self._row_num, from_=1, to=100)
+        self._entry_column = tkinter.Spinbox(self,textvariable=self._column_num, from_=1, to=100)
+        self._entry_row.grid(row = 1, column=2)
+        self._entry_column.grid(row = 2, column=2)
 
-        # self.test_canvas = tkinter.Canvas(self, bg="white", width=40, height=40)
-        # self.test_canvas.grid(row=0, column=0, rowspan=6, padx=10, pady=10)
-        # self.row_choose_img = tkinter.ttk.Label(self, text='画像をどのように配置するか')
-        # self.label_description1.grid(row=0, column=1)
 
         self.label_description = tkinter.ttk.Label(self, text='印刷範囲を選択\r\n(注: 全画像同じトリミングがなされます)')
-        self.label_description.grid(row=0, column=1)
+        self.label_description.grid(row=3, column=1, columnspan=2)
         self._canvas_trim = CanvasTrim(self.test_canvas, width, height)
 
         self.select_all_button = tkinter.ttk.Button(self, text='全選択', command=self._canvas_trim.select_all)
-        self.select_all_button.grid(row=1, column=1)
+        self.select_all_button.grid(row=4, column=1, columnspan=2)
 
         self.select_all_button = tkinter.ttk.Button(self, text='決定', command=self.decide)
-        self.select_all_button.grid(row=2, column=1)
+        self.select_all_button.grid(row=5, column=1, columnspan=2)
     
     def decide(self):
-        self._generate_img_pdf.set_grid(self._row_num, self._column_num)
+        row_num = int(self._row_num.get())
+        column_num = int(self._column_num.get())
+        self._generate_img_pdf.set_grid(row_num, column_num)
         x0, y0, x1, y1 = self._canvas_trim.get_rect()
         self._generate_img_pdf.generate(x0 / self._scale, y0 / self._scale, x1 / self._scale, y1 / self._scale)
         self.master.destroy()
