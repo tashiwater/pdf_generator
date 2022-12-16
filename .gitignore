@@ -130,5 +130,6 @@ temp/*.png
 .pyre/
 
 ### Custom
-*.jpg
-*.pdf
+temp/*.png
+temp/*.jpg
+result.pdf

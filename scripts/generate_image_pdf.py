@@ -56,12 +56,11 @@ class CanvasTrim:
 class GenerateImgPdf():
     def __init__(self, current_dir) -> None:
         self._thickness = 1
-        input_image_path = current_dir + "/../../Screenshots/*.png"
-        print(input_image_path)
+        image_dir =  current_dir + "/../../Screenshots/"
         self._output_temp_img_path = current_dir + "/../temp/"
         self._output_pdf_path = current_dir + "/../result.pdf"
 
-        files = glob.glob(input_image_path)
+        files = glob.glob(image_dir + "*.jpg") + glob.glob(image_dir + "*.png") 
         files_sorted = natsorted(files)
         images = []
         # one_width = 0
@@ -71,7 +70,6 @@ class GenerateImgPdf():
             # one_width = max(one_width, im.width)
             # one_height = max(one_height, im.height)
             images.append(im)
-
         self._images = images
     
     def set_grid(self, row:int, column:int):
@@ -83,9 +81,9 @@ class GenerateImgPdf():
         return self._images[0]
 
     def generate(self, x0, y0, x1, y1):
-        print(x0, y0, x1, y1)
-        one_width = int(x1 - x0)
-        one_height = int(y1 - y0)
+        crop_point = (int(x0), int(y0), int(x1), int(y1))
+        one_width = crop_point[2] - crop_point[0]
+        one_height = crop_point[3] - crop_point[1]
         columun_num = self._columun_num
         row_num = self._row_num
         page_num = self._page_num
@@ -104,7 +102,7 @@ class GenerateImgPdf():
                     id = page * row_num * columun_num + row * columun_num + column
                     if id < len(images):
                         img = images[id]
-                        img = img.crop((int(x0), int(y0), int(x1), int(y1)))
+                        img = img.crop(crop_point)
                     else:
                         img = Image.new('RGB', (one_width + self._thickness, one_height + self._thickness), white)
                         
