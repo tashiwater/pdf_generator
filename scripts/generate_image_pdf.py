@@ -103,23 +103,15 @@ class GenerateImgPdf():
                     if id < len(images):
                         img = images[id]
                         img = img.crop(crop_point)
+                        img = img.resize((one_width, one_height))
                     else:
                         img = Image.new('RGB', (one_width + self._thickness, one_height + self._thickness), white)
-                        
 
-                    # for i, img in enumerate(images):
-                        # page = i // (row_num * columun_num)
-                        # i2 = i % (row_num * columun_num)
-                        # column =  i2  % columun_num
-                        # i3 = i2 // columun_num
-                        # row = i3 % row_num
-                        ### 画像配置場所 画像サイズ+枠線分の移動
+                    ### 画像配置場所 画像サイズ+枠線分の移動
                     paste_x = column * one_width + column * self._thickness
                     paste_y = row * one_height + row * self._thickness
 
                     canvases[page].paste(img, (paste_x, paste_y))
-                
-
 
         img_paths = [] 
         for i, canvas in enumerate(canvases):
