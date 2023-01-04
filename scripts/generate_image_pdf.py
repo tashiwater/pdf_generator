@@ -60,7 +60,7 @@ class GenerateImgPdf():
         self._output_temp_img_path = current_dir + "/../temp/"
         self._output_pdf_path = current_dir + "/../result.pdf"
 
-        files = glob.glob(image_dir + "*.jpg") + glob.glob(image_dir + "*.png") 
+        files = glob.glob(image_dir + "/**/*.jpg", recursive=True) + glob.glob(image_dir + "/**/*.png", recursive=True) 
         files_sorted = natsorted(files)
         images = []
         # one_width = 0
@@ -76,43 +76,14 @@ class GenerateImgPdf():
         self._row_num = row
         self._columun_num = column
         self._page_num = np.ceil(len(self._images) / (self._columun_num * self._row_num)).astype(int)
+        self._header_ratio = 0.2
 
     def get_sample_img(self):
         return self._images[0]
 
     def generate(self, x0, y0, x1, y1):
-        crop_point = (int(x0), int(y0), int(x1), int(y1))
-        one_width = crop_point[2] - crop_point[0]
-        one_height = crop_point[3] - crop_point[1]
-        columun_num = self._columun_num
-        row_num = self._row_num
-        page_num = self._page_num
-        images = self._images
-        white = (255, 255, 255)
-        black = (0,0,0)
 
-        canvas_width = one_width * columun_num + (columun_num -1 ) *self._thickness
-        canvas_height = one_height * row_num +  (row_num -1 ) *self._thickness
-        canvases = [Image.new('RGB', (canvas_width, canvas_height), black) for _ in range(page_num)]
-       
-
-        for page in range(page_num):
-            for row in range(row_num):
-                for column in range(columun_num):
-                    id = page * row_num * columun_num + row * columun_num + column
-                    if id < len(images):
-                        img = images[id]
-                        img = img.crop(crop_point)
-                        img = img.resize((one_width, one_height))
-                    else:
-                        img = Image.new('RGB', (one_width + self._thickness, one_height + self._thickness), white)
-
-                    ### 画像配置場所 画像サイズ+枠線分の移動
-                    paste_x = column * one_width + column * self._thickness
-                    paste_y = row * one_height + row * self._thickness
-
-                    canvases[page].paste(img, (paste_x, paste_y))
-
+        canvases = self._generate_img(x0, y0, x1, y1)
         img_paths = [] 
         for i, canvas in enumerate(canvases):
             path = self._output_temp_img_path  + "{:02d}.jpg".format(i)
@@ -123,7 +94,48 @@ class GenerateImgPdf():
         with open(self._output_pdf_path, "wb") as f:
             f.write(pdf_bytes)
 
+    def _generate_img(self, x0, y0, x1, y1):
+        crop_point = (int(x0), int(y0), int(x1), int(y1))
+        one_width = crop_point[2] - crop_point[0]
+        one_height = crop_point[3] - crop_point[1]
+        columun_num = self._columun_num
+        row_num = self._row_num
+        page_num = self._page_num
+        images = self._images
+        white = (255, 255, 255)
+        black = (0,0,0)
+
+        header_height = int(self._header_ratio * one_height)
+
+        canvas_width = one_width * columun_num + (columun_num -1 ) *self._thickness
+        canvas_height = one_height * row_num +  (row_num -1 ) *self._thickness + header_height * 2
+        canvases = [Image.new('RGB', (canvas_width, canvas_height), white) for _ in range(page_num)]
+
+        row_frame =  Image.new('RGB', (canvas_width, self._thickness), black)
+        column_frame =  Image.new('RGB', (self._thickness, canvas_height - header_height), black)
+        for page in range(page_num):
+            for row in range(row_num):
+                ### 画像配置場所 画像サイズ+枠線分の移動
+                paste_y = row * one_height + header_height + row * self._thickness
+                if row != 0:
+                    ### show row_frame
+                    canvases[page].paste(row_frame, (0, paste_y- self._thickness))
+                    
+                for column in range(columun_num):
+                    id = page * row_num * columun_num + row * columun_num + column
+                    if id >= len(images):
+                        return canvases
+                    paste_x = column * one_width + column * self._thickness
+                    if column != 0:
+                        ### show frame
+                        canvases[page].paste(column_frame, (paste_x- self._thickness, header_height))
+
+                    img = images[id]
+                    img = img.crop(crop_point)
+                    img = img.resize((one_width, one_height))
+                    canvases[page].paste(img, (paste_x, paste_y))
     
+        return canvases
     
 class Application(tkinter.Frame):
     def __init__(self, master=None):
